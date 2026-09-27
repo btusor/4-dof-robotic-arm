@@ -36,7 +36,7 @@ T32 = dh_trans(DH_sym(3,1), DH_sym(3,2), DH_sym(3,3), DH_sym(3,4));
 T43 = dh_trans(DH_sym(4,1), DH_sym(4,2), DH_sym(4,3), DH_sym(4,4));
 
 % Robot stylus cumulative forward kinematic model and simplify
-T_total_stylus = simplify(T10 * T21 * T32 * T43)
+T_total_stylus = simplify(T10 * T21 * T32 * T43);
 
 % Transformation matrix between frame 4 and 5
 T54 = [
@@ -47,4 +47,40 @@ T54 = [
     ];
 
 % Robot camera cumulative forward kinematic model and simplify
-T_total_camera = simplify(T_total_stylus * T54)
+T_total_camera = simplify(T_total_stylus * T54);
+
+%% Jacobian matrix
+
+q = [th1; th2; th3; th4];
+
+% Origins of each coordinate frame (expressed in base frame)
+o0 = [0; 0; 0];
+T20 = T10 * T21;
+T30 = T20 * T32;
+o1 = T10(1:3, 4);
+o2 = T20(1:3, 4);
+o3 = T30(1:3, 4);
+o_eff = T_total_stylus(1:3, 4);
+o_cam = T_total_camera(1:3, 4);
+
+% Z-axes of each frame (z_{i-1} for i = 1, 2, 3, 4)
+z0 = [0; 0; 1]; % Base frame z-axis
+z1 = T10(1:3, 3);
+z2 = T20(1:3, 3);
+z3 = T30(1:3, 3);
+
+%% Build Geometric Jacobians (Revolute joints)
+
+% Stylus End-Effector Jacobian
+J_v_eff = [cross(z0, o_eff - o0), cross(z1, o_eff - o1), cross(z2, o_eff - o2), cross(z3, o_eff - o3)];
+J_w_eff = [z0, z1, z2, z3];
+J_eff = simplify([J_v_eff; J_w_eff])
+
+% Camera Jacobian
+J_v_cam = [cross(z0, o_cam - o0), cross(z1, o_cam - o1), cross(z2, o_cam - o2), cross(z3, o_cam - o3)];
+J_w_cam = [z0, z1, z2, z3];
+J_cam = simplify([J_v_cam; J_w_cam])
+
+%% Numerical evaluation at specific phi values
+
+phi_values = [0, pi/2, pi, 3*pi/2];
