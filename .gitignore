@@ -2,3 +2,5 @@
 !*.m
 !*.py
 !.gitignore
+!Computer Vision/
+!Computer Vision/**
