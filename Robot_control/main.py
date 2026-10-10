@@ -14,7 +14,7 @@ ADDR_MX_PUNCH                = 48
 
 PROTOCOL_VERSION             = 1.0
 DXL_IDS                      = [1, 2, 3, 4]  # The 4 servos of the 4-DOF robot arm
-DEVICENAME                   = 'COM3'        # Check the actual port name in Dynamixel Wizard
+DEVICENAME                   = 'COM5'        # Check the actual port name in Dynamixel Wizard
 BAUDRATE                     = 1000000
 
 TORQUE_ENABLE                = 1
