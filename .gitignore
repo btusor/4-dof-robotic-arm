@@ -4,5 +4,7 @@
 !.gitignore
 !Computer_vision/
 !Computer_vision/**
+!Calculations/
+!Calculations/**
 !Robot_control/
 !Robot_control/**
