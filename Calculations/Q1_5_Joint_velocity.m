@@ -8,7 +8,7 @@ a_2 = 93;
 a_3 = 93; 
 a_4 = 50;
 
-% Point on the circle at phi = pi/2, stylus horizontal
+% Point on the circle at phi = pi/2
 p_c = [150; 0; 120];  
 R = 32;  
 phi = pi/2;

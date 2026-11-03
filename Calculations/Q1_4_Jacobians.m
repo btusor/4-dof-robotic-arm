@@ -56,8 +56,10 @@ q = [th1; th2; th3; th4];
 
 % Origins of each coordinate frame (expressed in base frame)
 o0 = [0; 0; 0];
+
 T20 = T10 * T21;
 T30 = T20 * T32;
+
 o1 = T10(1:3, 4);
 o2 = T20(1:3, 4);
 o3 = T30(1:3, 4);
