@@ -27,6 +27,7 @@ while True:
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
     cv2.imshow("camera", frame)
     key = cv2.waitKey(1) & 0xFF
+    
     if key == ord("q"):
         break
     if key == ord("s"):
@@ -34,10 +35,6 @@ while True:
         cv2.imwrite(name, frame)
         print("saved", name)
         shot += 1
-    if key == ord("n"):
-        cap.release()
-        index = (index + 1) % 2
-        cap = open_cam(index)
 
 cap.release()
 cv2.destroyAllWindows()

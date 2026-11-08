@@ -6,7 +6,7 @@ import math
 import numpy as np
 import time
 
-# --- Dynamixel SDK path bootstrap -----------------------
+# Dynamixel SDK path bootstrap
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sdk_path = os.path.join(parentdir, "DynamixelSDK-3.7.31", "python", "src", "dynamixel_sdk")
@@ -19,13 +19,12 @@ from dynamixel_sdk import PortHandler, PacketHandler
 def cosd(x_deg):  # cos with degrees
     return math.cos(math.radians(x_deg))
 
-
 def sind(x_deg):  # sin with degrees
     return math.sin(math.radians(x_deg))
 
 
 class MyRobot:
-    # ----------------------------- Constants (AX-12A) -------------------------
+    # onstants (AX-12A)
     ADDR_MX_TORQUE_ENABLE = 24       # 1 byte
     ADDR_MX_GOAL_POSITION = 30       # 2 bytes
     ADDR_MX_MOVING_SPEED = 32        # 2 bytes
@@ -34,7 +33,7 @@ class MyRobot:
 
     PROTOCOL_VERSION = 1.0
     BAUDRATE = 1_000_000
-    DEVICENAME = "COM3"              # e.g., Windows: 'COM3' | Linux: '/dev/ttyUSB0' | Mac: '/dev/tty.usbserial-*'
+    DEVICENAME = "COM3"              
 
     TORQUE_ENABLE = 1
     TORQUE_DISABLE = 0
@@ -43,7 +42,7 @@ class MyRobot:
     TICKS_PER_DEG = 1.0 / 0.29        # ≈ 3.448275862 ticks per degree
     DEG_PER_TICK = 0.29
 
-    # ------------------------------- Init -------------------------------------
+    # Init
     def __init__(self):
         # Robot + kinematics state
         self.motor_ids = [1, 2, 3, 4]
@@ -100,7 +99,7 @@ class MyRobot:
             print(f"Initialization error: {e}")
             self.init_status = 0
 
-    # ----------------------------- Utilities ----------------------------------
+    # Utilities
     @staticmethod
     def clamp(v, lo, hi):
         return max(lo, min(hi, v))
@@ -124,7 +123,7 @@ class MyRobot:
                 raise ValueError("Angle Limits Reached, Min/Max: ±100°")
         return deg
 
-    # --------------------------- Motor I/O wrappers ---------------------------
+    # Motor I/O wrappers
     def _write1(self, dxl_id, addr, value):
         dxl_comm_result, dxl_error = self.packet_handler.write1ByteTxRx(self.port_handler, dxl_id, addr, int(value))
         if dxl_comm_result != self.COMM_SUCCESS or dxl_error != 0:
@@ -141,7 +140,7 @@ class MyRobot:
             raise IOError(f"DXL read2 error id={dxl_id}, addr={addr}, result={dxl_comm_result}, error={dxl_error}")
         return value
 
-    # ------------------------------- Speeds/Torque ----------------------------
+    # Speeds/Torque
     def smooth_speed(self, joint_angles_delta_deg):
         max_angle = float(np.max(np.abs(joint_angles_delta_deg)))
         if max_angle == 0:
