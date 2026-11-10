@@ -13,31 +13,40 @@ A2 = 93.0
 A3 = 93.0
 A4 = 50.0
 THETA2_OFFSET_DEG = 90.0
+# Measured with hand-guided poses (read_pose.py): with the stylus pointing straight
+# down, J4 reads about +30..+37 deg while J2 + 90 + J3 is about -45, so the J4 zero is
+# turned by about -90 deg relative to the DH angle (theta_4 = q4 - 90).
+THETA4_OFFSET_DEG = -90.0
 
 # Joint ranges [deg] that servo_limit_test.py drove through without a stall.
 # J4 stops mechanically at about -34 deg on the negative side (stalled at -40).
 JOINT_LIMITS_DEG = [(-90, 90), (-100, 20), (-120, 120), (-30, 100)]
 LIMIT_MARGIN_DEG = 2.0
 
+# The assignment gives 45 mm along y_4. Fitted to Smarties touched by hand (5 points,
+# rms error 4.8 mm) the effective offset is 30 mm.
+CAMERA_Y_OFFSET_MM = 30.0
 T_4_5 = np.array([[1, 0, 0, -15],
-                  [0, 1, 0, 45],
+                  [0, 1, 0, CAMERA_Y_OFFSET_MM],
                   [0, 0, 1, 0],
                   [0, 0, 0, 1]], dtype=float)
 
-# Rotation from the OpenCV camera frame (x right, y down, z out of the lens)
-# to frame {5}. At RECORDING_POSE = [0, -30, -30, -30] the camera looks straight
-# down, which is -y_5 (the size-based depth ~190 mm matches the 222 mm camera
-# height). Image-right = x_5, image-down = z_5 is a GUESS: the other right-handed
-# choices differ by a 90 / 180 deg turn about the vertical. If the stylus lands
-# rotated or mirrored relative to the Smartie, change these two axes.
-_X_CAM, _Y_CAM = np.array([1, 0, 0]), np.array([0, 0, 1])
-R_5_CAM = np.column_stack([_X_CAM, _Y_CAM, np.cross(_X_CAM, _Y_CAM)]).astype(float)
+# Rotation from the OpenCV camera frame (x right, y down, z out of the lens) to
+# frame {5}. The lens looks along x_5 (out of the camera, as in the DH). At
+# RECORDING_POSE the sum theta_2 + theta_3 + theta_4 is -90 deg, so x_5 points down.
+# Fitted to Smarties touched by hand: image-right = -z_5 (= +y of the base) and
+# image-down = -y_5 (= -x of the base, i.e. towards the robot). This is a MIRRORED
+# (left-handed) set of axes: the camera image is flipped vertically, so the matrix
+# has determinant -1. Only directions are used, so that is fine.
+_X_CAM, _Y_CAM, _Z_CAM = np.array([0, 0, -1]), np.array([0, -1, 0]), np.array([1, 0, 0])
+R_5_CAM = np.column_stack([_X_CAM, _Y_CAM, _Z_CAM]).astype(float)
 
 
 def q_to_theta(q_deg):
     """Robot joint angles [deg] -> DH angles [rad]."""
     q = np.asarray(q_deg, dtype=float).copy()
     q[1] += THETA2_OFFSET_DEG
+    q[3] += THETA4_OFFSET_DEG
     return np.radians(q)
 
 
@@ -45,6 +54,7 @@ def theta_to_q(theta_rad):
     """DH angles [rad] -> robot joint angles [deg]."""
     q = np.degrees(np.asarray(theta_rad, dtype=float))
     q[1] -= THETA2_OFFSET_DEG
+    q[3] -= THETA4_OFFSET_DEG
     return q
 
 
