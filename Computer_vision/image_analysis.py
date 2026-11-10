@@ -34,6 +34,9 @@ def find_candies(img, s_min=45, min_area=1500, max_area=15000,
         area = cv2.contourArea(c)
         if not (min_area <= area <= max_area):
             continue
+        x, y, w, h = cv2.boundingRect(c)
+        if x <= 0 or y <= 0 or x + w >= mask.shape[1] or y + h >= mask.shape[0]:
+            continue  # cut off by the image border: centre and radius would be wrong
         perimeter = cv2.arcLength(c, True)
         circularity = 4 * np.pi * area / perimeter ** 2 if perimeter else 0
         if circularity < min_circularity:
@@ -59,7 +62,7 @@ def find_candies(img, s_min=45, min_area=1500, max_area=15000,
     return candies
 
 
-def find_red_spots(img, hue_lo=-5, hue_hi=4, s_min=110, fill_min=0.4, **kwargs):
+def find_red_spots(img, hue_lo=-14, hue_hi=3, s_min=60, fill_min=0.4, **kwargs):
     """Find red M&Ms in a BGR image.
 
     Hue is relative to red (OpenCV hue wraps at 180), so hue_lo=-5,
@@ -105,7 +108,7 @@ def draw_spots(img, spots):
     return out
 
 
-def red_threshold_mask(img, hue_lo=-5, hue_hi=4, s_min=110, v_min=80, blur=5):
+def red_threshold_mask(img, hue_lo=-14, hue_hi=3, s_min=60, v_min=80, blur=5):
     """Pixel-wise binary threshold of red: 255 = red pixel, 0 = not red.
 
     Uses the same hue/saturation window as find_red_spots. This is the raw

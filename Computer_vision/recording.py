@@ -33,7 +33,7 @@ class MyRobot:
 
     PROTOCOL_VERSION = 1.0
     BAUDRATE = 1_000_000
-    DEVICENAME = "COM3"              
+    DEVICENAME = "COM5"              
 
     TORQUE_ENABLE = 1
     TORQUE_DISABLE = 0

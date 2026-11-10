@@ -23,7 +23,7 @@ DEBUG_DIR = os.path.join(HERE, "Debug")
 
 # Parameters
 HOME_POSE = [0, 0, 0, 0]
-RECORDING_POSE = [0, -30, -30, -120]
+RECORDING_POSE = [0, -30, -30, -30]
 HOVER_MM = 30.0        
 SMARTIE_TOP_Z_MM = 6.0 
 
