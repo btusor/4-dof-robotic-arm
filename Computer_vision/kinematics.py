@@ -14,20 +14,24 @@ A3 = 93.0
 A4 = 50.0
 THETA2_OFFSET_DEG = 90.0
 
+# Joint ranges [deg] that servo_limit_test.py drove through without a stall.
+# J4 stops mechanically at about -34 deg on the negative side (stalled at -40).
+JOINT_LIMITS_DEG = [(-90, 90), (-100, 20), (-120, 120), (-30, 100)]
+LIMIT_MARGIN_DEG = 2.0
+
 T_4_5 = np.array([[1, 0, 0, -15],
                   [0, 1, 0, 45],
                   [0, 0, 1, 0],
                   [0, 0, 0, 1]], dtype=float)
 
 # Rotation from the OpenCV camera frame (x right, y down, z out of the lens)
-# to frame {5}. 
-
-# ASSUMPTION: the lens looks along x_5 (the stylus direction),
-# image-right = y_5, image-down = z_5. Verify on the robot and change if the
-# touch points are mirrored or rotated.
-R_5_CAM = np.array([[0, 0, 1],
-                    [1, 0, 0],
-                    [0, 1, 0]], dtype=float)
+# to frame {5}. At RECORDING_POSE = [0, -30, -30, -30] the camera looks straight
+# down, which is -y_5 (the size-based depth ~190 mm matches the 222 mm camera
+# height). Image-right = x_5, image-down = z_5 is a GUESS: the other right-handed
+# choices differ by a 90 / 180 deg turn about the vertical. If the stylus lands
+# rotated or mirrored relative to the Smartie, change these two axes.
+_X_CAM, _Y_CAM = np.array([1, 0, 0]), np.array([0, 0, 1])
+R_5_CAM = np.column_stack([_X_CAM, _Y_CAM, np.cross(_X_CAM, _Y_CAM)]).astype(float)
 
 
 def q_to_theta(q_deg):
@@ -111,6 +115,25 @@ def inverse(p, x_z0=-1.0, elbow="up"):
     theta2 = np.arctan2(s, r) - np.arctan2(A3 * s3, A2 + A3 * c3)
     theta4 = theta_ee - theta2 - theta3
     return theta_to_q([theta1, theta2, theta3, theta4])
+
+
+def within_limits(q_deg, margin=LIMIT_MARGIN_DEG):
+    return all(lo + margin <= a <= hi - margin for a, (lo, hi) in zip(q_deg, JOINT_LIMITS_DEG))
+
+
+def inverse_limited(p, pitch_deg):
+    """IK for the stylus tip p with the stylus pitched pitch_deg (-90 = straight down),
+    trying both elbow configurations. Returns the first solution inside JOINT_LIMITS_DEG,
+    raises ValueError if there is none."""
+    x_z0 = np.sin(np.radians(pitch_deg))
+    for elbow in ("up", "down"):
+        try:
+            q = inverse(p, x_z0=x_z0, elbow=elbow)
+        except ValueError:
+            continue
+        if within_limits(q):
+            return q
+    raise ValueError(f"No solution inside the joint limits for {np.round(p, 1)} at pitch {pitch_deg}")
 
 
 if __name__ == "__main__":

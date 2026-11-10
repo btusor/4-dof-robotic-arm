@@ -25,7 +25,8 @@ DEBUG_DIR = os.path.join(HERE, "Debug")
 HOME_POSE = [0, 0, 0, 0]
 RECORDING_POSE = [0, -30, -30, -30]
 HOVER_MM = 30.0        
-SMARTIE_TOP_Z_MM = 6.0 
+SMARTIE_TOP_Z_MM = 6.0
+PITCHES_DEG = [-90, -85, -80, -75, -70, -65, -60, -55, -50, -45, -40]  # stylus pitch candidates 
 
 
 def make_run_dir():
@@ -69,13 +70,19 @@ def touch_targets(p_base):
     camera frame but by the stylus tip (frame {4}), pointing straight down.
     """
     p = np.array(p_base, dtype=float)
-    q_touch = kin.inverse(p, x_z0=-1.0)
-    for hover in (HOVER_MM, HOVER_MM / 2, 10.0):   # lower the hover if it is out of reach
+    # Straight down first (pitch -90). J4 cannot go below about -30 deg, so
+    # the stylus is tilted step by step until the pose is inside the joint limits.
+    for pitch in PITCHES_DEG:
         try:
-            return kin.inverse(p + [0, 0, hover], x_z0=-1.0), q_touch
+            q_touch = kin.inverse_limited(p, pitch)
         except ValueError:
-            pass
-    return q_touch, q_touch
+            continue
+        for hover in (HOVER_MM, HOVER_MM / 2, 10.0):   # lower the hover if it is out of reach
+            try:
+                return kin.inverse_limited(p + [0, 0, hover], pitch), q_touch
+            except ValueError:
+                pass
+    raise ValueError(f"Target {np.round(p, 1)} is out of reach inside the joint limits")
 
 
 def run_robot(run_dir):
@@ -107,14 +114,17 @@ def run_robot(run_dir):
         if not 1 <= n <= 3:
             print(f"Warning: expected 1-3 red Smarties, found {n}")
 
-        for i, p in enumerate(points_base):
+        # Closest to the base first: the far ones are at the edge of the workspace
+        for i, p in enumerate(sorted(points_base, key=lambda p: np.hypot(p[0], p[1]))):
             print(f"Touching Smartie #{i+1} at {np.round(p, 1)} mm")
             try:
                 q_hover, q_touch = touch_targets(p)
-                robot.move_j(*q_hover)
-                robot.move_j(*q_touch)
-                time.sleep(0.5)
-                robot.move_j(*q_hover)
+                print("  hover:", np.round(q_hover, 1), "touch:", np.round(q_touch, 1))
+                if robot.move_j(*q_hover) and robot.move_j(*q_touch):
+                    time.sleep(0.5)
+                    robot.move_j(*q_hover)
+                else:
+                    print("  could not reach the target, skipping")
             except ValueError as e:   # unreachable or outside the joint limits
                 print(f"  skipped: {e}")
             robot.move_j(*HOME_POSE)

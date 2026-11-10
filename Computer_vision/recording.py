@@ -216,7 +216,7 @@ class MyRobot:
    #  The output should be in the format of an array
 
     # ------------------------------- Motion -----------------------------------
-    def move_j(self, j1_deg, j2_deg, j3_deg, j4_deg, wait=True, tol_deg=2.0, poll_period=0.05):
+    def move_j(self, j1_deg, j2_deg, j3_deg, j4_deg, wait=True, tol_deg=2.0, poll_period=0.05, timeout_s=10.0):
         # Limits
         desired = np.array([j1_deg, j2_deg, j3_deg, j4_deg], dtype=float)
         for i in range(4):
@@ -239,8 +239,11 @@ class MyRobot:
             return
 
 
-        # Wait until all joints within tolerance
-        while True:
+        # Wait until all joints within tolerance. A joint that is blocked or in
+        # overload never gets there, so give up after timeout_s instead of looping.
+        t_end = time.time() + timeout_s
+        ja = None
+        while time.time() < t_end:
             try:
                 ja = self.read_joint_angles()
             except Exception:
@@ -248,8 +251,11 @@ class MyRobot:
                 time.sleep(poll_period)
                 continue
             if np.all(np.abs(ja - desired) < tol_deg):
-                break
+                return True
             time.sleep(poll_period)
+        print(f"move_j timeout: target {np.round(desired, 1)}, measured "
+              f"{None if ja is None else np.round(ja, 1)} deg (a joint is blocked or in overload)")
+        return False
 
     #def move_c(self, x, y, z, pitch_deg, **kwargs):
      #   j_deg = self.inverse(x, y, z, math.radians(pitch_deg))
