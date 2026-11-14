@@ -2,9 +2,7 @@
 !*.m
 !*.py
 !.gitignore
-!Computer_vision/
-!Computer_vision/**
+!Computer_Vision_and_Control/
+!Computer_Vision_and_Control/**
 !Calculations/
 !Calculations/**
-!Robot_control/
-!Robot_control/**
