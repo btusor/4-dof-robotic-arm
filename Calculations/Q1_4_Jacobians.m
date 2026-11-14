@@ -40,9 +40,10 @@ T43 = dh_trans(DH_sym(4,1), DH_sym(4,2), DH_sym(4,3), DH_sym(4,4));
 T_total_stylus = simplify(T10 * T21 * T32 * T43);
 
 % Transformation matrix between frame 4 and 5
+% Origin: (l_4 - l_6) = 15 mm back along x_4, l_5 = 45 mm along y_4.
 T54 = [
-    0,  0,  0, -15;
-    0,  1,  0,  45;
+    1,  0,  0, -(l_4 - l_6);
+    0,  1,  0,  l_5;
     0,  0,  1,  0;
     0,  0,  0,  1
     ];
@@ -86,4 +87,46 @@ J_cam = simplify([J_v_cam; J_w_cam])
 
 %% Numerical evaluation at specific phi values
 
-phi_values = [0, pi/2, pi, 3*pi/2];
+phi_values = [0, pi/2, pi, 3*pi/2];          
+phi_names  = {'0', 'pi/2', 'pi', '3pi/2'};   
+
+% Circle parameters
+p_c  = [150; 0; 120];   % circle centre [mm]
+R    = 32;              % circle radius [mm]
+x_z0 = 0;               % stylus horizontal
+
+for k = 1:length(phi_values)
+    phi = phi_values(k);
+
+    % Target stylus tip position on the circle
+    o_40 = p_c + R*[0; cos(phi); sin(phi)];
+
+    % Joint configuration from the inverse kinematics (elbow-up)
+    q_num = inverseKinematics(o_40, x_z0, l_1, l_2, l_3, l_4);
+
+    % Substitute into the symbolic Jacobians
+    J_eff_num = double(subs(J_eff, q, q_num));
+    J_cam_num = double(subs(J_cam, q, q_num));
+
+    fprintf('\n===== phi = %s =====\n', phi_names{k});
+    fprintf('q = [%7.2f %7.2f %7.2f %7.2f] deg\n', rad2deg(q_num));
+    fprintf('Stylus Jacobian J_eff:\n');  disp(round(J_eff_num, 4));
+    fprintf('Camera Jacobian J_cam:\n');  disp(round(J_cam_num, 4));
+    fprintf('rank(J_eff) = %d, rank(J_cam) = %d\n', rank(J_eff_num), rank(J_cam_num));
+end
+
+%% Local functions
+
+function q = inverseKinematics(o_40, x_z0, d_1, a_2, a_3, a_4)
+    o_x = o_40(1);  o_y = o_40(2);  o_z = o_40(3);
+    theta1   = atan2(o_y, o_x);
+    theta_ee = asin(x_z0);
+    r = sqrt(o_x^2 + o_y^2) - a_4*cos(theta_ee);
+    s = o_z - d_1 - a_4*sin(theta_ee);
+    c3 = (r^2 + s^2 - a_2^2 - a_3^2) / (2*a_2*a_3);
+    s3 = -sqrt(1 - c3^2);                     % elbow-up
+    theta3 = atan2(s3, c3);
+    theta2 = atan2(s, r) - atan2(a_3*s3, a_2 + a_3*c3);
+    theta4 = theta_ee - theta2 - theta3;
+    q = [theta1; theta2; theta3; theta4];
+end
