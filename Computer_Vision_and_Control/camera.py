@@ -2,7 +2,7 @@
 import time
 import cv2
 
-CAM_INDEX = 1
+CAM_INDEX = 0
 WIDTH, HEIGHT = 1280, 720
 
 

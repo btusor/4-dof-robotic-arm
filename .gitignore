@@ -3,6 +3,7 @@
 !*.py
 !.gitignore
 !Computer_Vision_and_Control/
+!Computer_Vision_and_Control/Debug
 !Computer_Vision_and_Control/**
 !Calculations/
 !Calculations/**

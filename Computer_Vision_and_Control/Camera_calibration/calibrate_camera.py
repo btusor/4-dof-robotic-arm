@@ -17,10 +17,10 @@ import os
 import numpy as np
 import cv2
 
-CAM_INDEX = 1
+CAM_INDEX = 0
 WIDTH, HEIGHT = 1280, 720          # must match the resolution you use later
-BOARD = (6, 4)                     # inner corners (columns, rows)
-SQUARE_MM = 35.0                   # printed square size in mm
+BOARD = (8, 6)                     # inner corners (columns, rows)
+SQUARE_MM = 30.0                   # printed square size in mm
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "camera_calib.npz")
 

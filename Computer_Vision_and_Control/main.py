@@ -23,9 +23,13 @@ DEBUG_DIR = os.path.join(HERE, "Debug")
 
 # Parameters
 HOME_POSE = [0, 0, 0, 0]
-RECORDING_POSE = [0, -30, -30, -30]
+RECORDING_POSE = [0, -30, -30, -120] # 7-es robot 8x6 checkerboard, 30mm
 HOVER_MM = 30.0        
 SMARTIE_TOP_Z_MM = -44.0   # base frame z of a Smartie top: the table is ~50 mm below frame {0}
+# Hand-tuned correction added to every vision target [x, y, z] in the base frame [mm].
+# The stylus landed ~3-4 cm towards the image bottom-right (image right = +y,
+# image down = -x), so shift the targets the opposite way. Tune by observing touches.
+TARGET_OFFSET_MM = np.array([15.0, 20.0, 0.0])
 PITCHES_DEG = [-90, -85, -80, -75, -70, -65, -60, -55, -50, -45, -40]  # stylus pitch candidates 
 
 
@@ -60,7 +64,8 @@ def process_image(img, run_dir, q_rec=None):
     # at the moment of the picture (move_j accepts 2 deg error, which is ~10 mm on the table).
     if q_rec is None:
         q_rec = RECORDING_POSE
-    points_base = [kin.camera_ray_to_plane(p, q_rec, SMARTIE_TOP_Z_MM) for p in points_cam]
+    points_base = [kin.camera_ray_to_plane(p, q_rec, SMARTIE_TOP_Z_MM) + TARGET_OFFSET_MM
+                   for p in points_cam]
     for i, p in enumerate(points_base):
         print(f"  Smartie #{i+1} (base frame): x={p[0]:.1f}, y={p[1]:.1f}, z={p[2]:.1f} mm")
     return points_base

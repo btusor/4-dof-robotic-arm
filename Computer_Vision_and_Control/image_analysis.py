@@ -22,8 +22,13 @@ def find_candies(img, s_min=45, min_area=1500, max_area=15000,
     if blur:
         img = cv2.GaussianBlur(img, (blur, blur), 0)
     hsv = convert_to_hsv(img)
-
     mask = cv2.inRange(hsv[:, :, 1], s_min, 255)
+    return blobs_from_mask(mask, hsv, min_area, max_area, min_circularity)
+
+
+def blobs_from_mask(mask, hsv, min_area=1500, max_area=15000, min_circularity=0.6):
+    """Clean a binary mask and return one candy dict per round blob in it
+    (see find_candies for the dict fields)."""
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
@@ -80,18 +85,26 @@ def find_red_spots(img, hue_lo=-14, hue_hi=3, s_min=60, fill_min=0.4, **kwargs):
     red ~0.66 (highlights/shadow edge keep it below 1), others <= 0.06.
     Each candy dict gets a "red_fill" value.
 
+    The red blobs are segmented straight from the red pixel threshold, not
+    from the saturation-based find_candies: a tinted (bluish) paper corner
+    can exceed the saturation threshold and swallow candies into the
+    background blob, which made red Smarties disappear.
+
     Returns (spots, candies): spots = the red candies, candies = all
-    candies found (useful for debugging thresholds).
+    candies found by find_candies (only for debugging thresholds).
     """
-    candies = find_candies(img, **kwargs)
     threshold = red_threshold_mask(img, hue_lo, hue_hi, s_min)
-    for c in candies:
+    hsv = convert_to_hsv(cv2.GaussianBlur(img, (5, 5), 0))
+    blob_kw = {k: kwargs[k] for k in ("min_area", "max_area", "min_circularity") if k in kwargs}
+    red_blobs = blobs_from_mask(threshold, hsv, **blob_kw)
+    for c in red_blobs:
         area = np.zeros(threshold.shape, np.uint8)
         cv2.drawContours(area, [c["contour"]], -1, 255, -1)
         c["red_fill"] = float((threshold[area > 0] > 0).mean())
-    spots = [c for c in candies
+    spots = [c for c in red_blobs
              if hue_lo <= c["hue"] <= hue_hi and c["sat"] >= s_min
              and c["red_fill"] >= fill_min]
+    candies = find_candies(img, **kwargs)
     spots.sort(key=lambda s: s["area"], reverse=True)
     return spots, candies
 

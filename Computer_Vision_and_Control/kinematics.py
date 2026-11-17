@@ -16,7 +16,9 @@ THETA2_OFFSET_DEG = 90.0
 # Measured with hand-guided poses (read_pose.py): with the stylus pointing straight
 # down, J4 reads about +30..+37 deg while J2 + 90 + J3 is about -45, so the J4 zero is
 # turned by about -90 deg relative to the DH angle (theta_4 = q4 - 90).
-THETA4_OFFSET_DEG = -90.0
+# The second robot (J4 = -120 points the camera down at RECORDING_POSE) has no J4
+# offset: theta_4 = q4. Use -90 for the first robot.
+THETA4_OFFSET_DEG = 0.0
 
 # Joint ranges [deg] that servo_limit_test.py drove through without a stall.
 # J4 stops mechanically at about -34 deg on the negative side (stalled at -40).
